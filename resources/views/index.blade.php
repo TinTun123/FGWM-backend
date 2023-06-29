@@ -9,6 +9,6 @@
 </head>
 <body>
     <div id="app"></div>
-    <script src="{{asset('assets/index-4576bc3c.js')}}"></script>
+    <script src="{{asset('assets/index-587cc8f4.js')}}"></script>
 </body>
 </html>
