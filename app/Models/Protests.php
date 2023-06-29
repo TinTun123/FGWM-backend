@@ -20,4 +20,14 @@ class Protests extends Model
         'bodyText'
 
     ];
+
+    protected $guarded = [];
+
+    public function messages() {
+        return $this->morphMany(Message::class, 'messageable');
+    }
+
+    public function user() {
+        return $this->belongsTo(User::class);
+    }
 }

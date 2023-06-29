@@ -15,7 +15,6 @@ return new class extends Migration
             $table->id();
             $table->text('title');
             $table->date('date');
-            $table->unsignedBigInteger('user_id');
             $table->foreign('user_id')->references('id')->on('users');
             $table->unsignedInteger('total_msg');
             $table->unsignedInteger('total_view');

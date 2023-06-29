@@ -5,8 +5,8 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StatementRequest;
 use App\Models\Statement;
 use Illuminate\Http\Request;
-
- 
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 
 class StatementController extends Controller
 {
@@ -17,17 +17,14 @@ class StatementController extends Controller
 
             $date = $request->input('date');
             $imageFile = $request->file('image');
-    
-            $filename = uniqid() . '.' .$imageFile->getClientOriginalExtension();
-            $path = public_path('images');
-            $imageFile->move($path, $filename);
-    
-            $statement = Statement::create([
-                'date' => $date,
-                'img_url' => asset('images/' . $filename)
-            ]);
-    
-            return response('OK', 200);
+            $id = $this->generateNewId();
+            $statement = new Statement();
+            $statement->date = $date;
+            $statement->id = $id;
+            $statement->img_url = $this->storeStateImages($imageFile, $id);
+            
+            $statement->save();
+            return response()->json([$statement]);
             
         } catch (\Exception $e) {
             return response()->json([
@@ -38,9 +35,53 @@ class StatementController extends Controller
 
     }
 
+    public function deleteStatement(Request $request, $id) {
+        $statement = Statement::findOrFail($id);
+        $folderPath = 'http://192.168.1.121:8000/images/statements/' . $id;
+
+        if(File::exists($folderPath)) {
+            File::deleteDirectory($folderPath);
+        }
+
+        $statement->delete();
+
+        return response()->json([
+            $id
+        ], 200);
+    }
+
     public function getStatement(Request $request, $page = 4) {
         
         $statements = Statement::paginate($page);
         return response()->json($statements);
+    }
+
+    private function storeStateImages($images, $stateId) {
+        $folderPath = 'images/statements/' . $stateId;
+
+        if(!File::exists(public_path($folderPath))) {
+            File::makeDirectory($folderPath, 0777, true, true);
+        }
+
+        $firstImagePath = null;
+
+        foreach ($images as $image) {
+            $filename = uniqid() . '.' . $image->getClientOriginalExtension();
+            $image->move(public_path($folderPath), $filename);
+
+            if ($firstImagePath === null) {
+                $firstImagePath = asset('images/statements/' . $stateId . '/' . $filename);
+            }
+        }
+
+        return $firstImagePath;
+    }
+
+    private function generateNewId() {
+
+        $lastInsertId = Statement::max('id');
+        $nextId = ($lastInsertId !== null) ? ($lastInsertId + 1) : 1;
+
+        return $nextId;
     }
 }

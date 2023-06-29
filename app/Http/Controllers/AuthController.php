@@ -14,7 +14,7 @@ class AuthController extends Controller
     
             $user = User::where('email', '=', $request->input('email'))->firstOrFail();
             
-            if(!Hash::check($request->input('password'), $user->password)) {
+            if(!Hash::check($request->input('pwd'), $user->password)) {
                 return response()->json([
                     'user' => 'password went wrong'
                 ]);

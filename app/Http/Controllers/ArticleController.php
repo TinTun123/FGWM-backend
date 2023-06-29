@@ -2,10 +2,19 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Activity;
+use App\Models\Article;
 use App\Models\Protests;
+use App\Models\User;
+use Carbon\Carbon;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+
+use function PHPSTORM_META\map;
 
 class ArticleController extends Controller
 {
@@ -13,51 +22,286 @@ class ArticleController extends Controller
     public function create(Request $request) {
 
         try {
-            $protest = new Protests;
+
+            $type = $request->input('type');
+            
+            if($type === 'protest') {
+
+                $article = new Protests;
+
+            } elseif ($type === 'activities') {
+
+                $article = new Activity;
+            } elseif ($type === 'articles') {
+                $article = new Article;
+            }
+
             $user_id = Auth::id();
-            $protest->id = $this->generateNewId();
-            $protest->title = $request->input('title');
-            $protest->date = $request->input('date');
-            $protest->bodyText = $request->input('content');
-            $protest->total_msg = 6;
-            $protest->total_view = 12;
-            $protest->user_id = $user_id;
-    
+            $article->id = $this->generateNewId($type);
+            $article->title = $request->input('title');
+            $article->date = $request->input('date');
+            $article->bodyText = $request->input('content');
+            if($type !== 'articles') {
+                $article->total_msg = 6;
+            }
+            $article->total_view = 12;
+            $article->user_id = $user_id;
+
             if($request->hasFile('coverImg')) {
-                $protest->imgURL = $this->storeImage($request->file('coverImg'), $protest->id, $request->input('type'));
+
+                $article->imgURL = $this->storeImage($request->file('coverImg'), $article->id, $request->input('type'));
+
             }
     
             if ($request->hasFile('images')) {
+
                 $images = $request->file('images');
-                $this->storeThumbnails($images, $protest->id, $request->input('type'));
+                $this->storeThumbnails($images, $article->id, $request->input('type'));
+
             }
     
-            $protest->save();
+            $article->save();
+
+            $article->user = User::find($user_id);
     
             return response()->json([
-                $protest
+                $article
             ]);
         } catch (\Exception $e) {
             return response()->json([
-                'error' => 'An error occurred during the operation',
+                'error' => $e->getMessage(),
                 500
             ]);
         }
+    }
+
+    public function showProtest(Request $request, $type) {
+        try {
+
+            if ($type === 'protest') {
+
+                $protests = Protests::withCount('messages')->with('user')->get()->toArray();
+                Log::info('protests', [
+                    $protests
+                ]);
+                foreach ($protests as &$protest) {
+                    $protest['created_at'] = Carbon::parse($protest['created_at'])->format('d M Y');
+                }
+                
+                return response()->json($protests);
+
+            } else if ($type === 'activities') {
+
+                $activities = Activity::withCount('messages')->with('user')->get()->toArray();
+                
+                foreach ($activities as &$activity) {
+                    $activity['created_at'] = Carbon::parse($activity['created_at'])->format('d M Y');
+                }
+
+                return response()->json($activities);
+
+            } else if ($type === 'articles') {
+
+                $articles = Article::withCount('messages')->with('user')->get()->toArray();
+
+                foreach ($articles as &$article) {
+                    $article['created_at'] = Carbon::parse($article['created_at'])->format('d M Y');
+                }
+                return response()->json($articles);
+
+            }
+
+        } catch (Exception $ex) {
+            return response()->json([
+                'error' => $ex,
+                500
+            ]);
+        }
+    }
+
+    public function editProtest(Request $request, $type, $id) {
+        try {
+
+            if($type === 'protest') {
+
+                $article = Protests::with('user')->find($id);
+
+            } elseif ($type === 'activities') {
+
+                $article = Activity::with('user')->find($id);
+
+            } elseif($type === 'articles') {
+
+                $article = Article::with('user')->find($id);
+
+            }
+
+
+
+            $user_id = Auth::id();
+
+            if(!$article) {
+                return response()->json(['message' => 'Article not found'], 404);
+            }
+
+            $title = $request->input('title');
+
+            if(!$title) {
+                return response()->json([
+                    'message' => 'No title found',
+                    400
+                ]);
+            }
+
+            if($title) {
+                $article->title = $title;
+            }
+
+            $date = $request->input('date');
+            if($date) {
+                $article->date = $date;
+            }
+
+            $bodyText = $request->input('content');
+            if($bodyText) {
+                $article->bodyText = $bodyText;
+            }
+            
+            if($type !== 'articles') {
+                $article->total_msg = 4;
+            }
+
+
+            $article->total_view = 23;
+
+            if($request->hasFile('coverImg')) {
+
+                $article->imgURL = $this->storeImage($request->file('coverImg'), $id, $type);
+
+            }
+            $folderPath = public_path('images/' . $type . '/' . $id . '/' . 'thumbnails/');
+            if(File::exists($folderPath)) {
+                File::deleteDirectory($folderPath);
+            }
+
+            if ($request->hasFile('images')) {
+                $images = $request->file('images');
+                $this->storeThumbnails($images, $id, $request->input('type'));
+            }
+
+            $article->save();
+            return response()->json([$article]);
+
+        } catch (Exception $ece) {
+            return response()->json([
+                'error' => $ece,
+                500
+            ]);
+        }
+    }
+
+    public function deleteProtest(Request $request, $type, $id) {
+        try {
+
+            if($type === 'protest') {
+
+                $article = Protests::findOrFail($id);
+                $article->messages()->delete();
+                $article->delete();
+                $lastProtest = Protests::latest()->first();
+
+            } elseif ($type === 'activities') {
+
+                $article = Activity::findOrFail($id);
+                $article->messages()->delete();
+                $article->delete();
+                $lastProtest = Activity::latest()->first();
+
+            } elseif ($type === 'articles') {
+                $article = Article::findOrFail($id);
+                $article->messages()->delete();
+                $article->delete();
+                $lastProtest = Article::latest()->first();
+            }
+
+
+
+            $folderPath = public_path('images/' . $type . '/' . $id);
+            if(File::exists($folderPath)) {
+                File::deleteDirectory($folderPath);
+            }
+
+            return response()->json([
+                 $lastProtest->id
+            ]);
+        } catch (Exception $exc) {
+            return response()->json([
+                'error' => 'Delete operation failed',
+                500
+            ]);
+        }
+    }
+
+
+    public function showThumbnails(Request $request, $type, $id) {
+
+        $folderPath = 'images/' . $type . '/' . $id . '/thumbnails';
+        
+        if(!file_exists(public_path($folderPath)) || !is_dir(public_path($folderPath))) {
+            return response()->json([]);
+        }
+
+        $files = scandir(public_path($folderPath));
+        $links = [];
+
+        foreach($files as $file) {
+
+            if($file !== '.' && $file !== '..') {
+                $publicUrl = asset($folderPath . '/' . $file);
+                $links[] = $publicUrl;
+            }
+
+        }
+        if ($type === 'protest') {
+            $article = Protests::findOrFail($id);
+        } elseif ($type === 'activities') {
+            $article = Activity::findOrFail($id);
+        } elseif ($type === 'articles') {
+            $article = Article::findOrFail($id);
+        }
+
+        $article->increment('total_view');
+
+
+        return response()->json($links);
+
     }
 
     private function storeImage($image, $protetId, $type) {
         $filename = uniqid() . '.' . $image->getClientOriginalExtension();
         $folderPath = 'images/' . $type . '/' . $protetId;
 
-        if(!File::exists(public_path($folderPath))) {
+        if(is_dir($folderPath)) {
 
+            $files = scandir($folderPath);
+
+
+            foreach($files as $file) {
+                if(is_file(public_path($folderPath) . '/' . $file)) {
+                    unlink(public_path($folderPath) . '/' . $file);
+                }
+
+            }
+        }
+
+        if(!File::exists(public_path($folderPath))) {
             File::makeDirectory(public_path($folderPath), 0777, true, true);
         }
 
         $image->move(public_path($folderPath), $filename);
         $publicURL = asset($folderPath . '/' . $filename);
-
         return $publicURL;
+
     }
 
     private function storeThumbnails($images, $protestId, $type) {
@@ -72,9 +316,19 @@ class ArticleController extends Controller
             $image->move($folderPath, $filename);
         }
     }
+ 
+    
 
-    private function generateNewId() {
-        $lastInsertId = Protests::max('id');
+    private function generateNewId($type) {
+
+        if($type === 'protest') {
+            $lastInsertId = Protests::max('id');
+        } elseif ($type === 'activities') {
+            $lastInsertId = Activity::max('id');
+        } elseif ($type === 'articles') {
+            $lastInsertId = Article::max('id');
+        }
+
         $nextId = ($lastInsertId !== null) ? ($lastInsertId + 1) : 1;
 
         return $nextId;

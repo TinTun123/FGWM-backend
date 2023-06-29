@@ -22,7 +22,8 @@ class StatementRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'image' => 'required|mimes:jpeg,png,jpg,gif|max:3072',
+            'image' => 'required|array',
+            'image.*' => 'mimes:jpeg,png,jpg,gif|max:3072',
             'date' => 'required|date'
         ];
     }

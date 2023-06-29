@@ -42,4 +42,17 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
+
+    public function article() {
+        return $this->morphMany(Article::class, 'user');
+
+    }
+
+    public function protests() {
+        return $this->morphMany(Protests::class, 'user');
+    }
+
+    public function activities() {
+        return $this->morphMany(Activity::class, 'user');
+    }
 }
