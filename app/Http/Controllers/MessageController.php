@@ -4,10 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\Activity;
 use App\Models\Article;
+use App\Models\Campagin;
 use App\Models\Message;
+use App\Models\MigrationCom;
 use App\Models\Protests;
+use App\Models\Women;
 use Carbon\Carbon;
 use Exception;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -16,12 +20,19 @@ class MessageController extends Controller
     public function saveMessage(Request $request, $type, $id) {
 
         try {
+            
             if ($type === 'protest') {
                 $article = Protests::findOrFail($id);
             } elseif ($type === 'activities') {
                 $article = Activity::findOrFail($id);
             } elseif ($type === 'articles') {
                 $article = Article::findOrFail($id);
+            } elseif ($type === 'campagins') {
+                $article = Campagin::findOrFail($id);
+            } elseif ($type === 'migration') {
+                $article = MigrationCom::findOrFail($id);
+            } elseif ($type === 'women') {
+                $article = Women::findOrFail($id);
             }
 
 
@@ -53,6 +64,12 @@ class MessageController extends Controller
                 $article = Activity::findOrFail($id);
             } elseif ($type === 'articles') {
                 $article = Article::findOrFail($id);
+            } elseif ($type === 'campagins') {
+                $article = Campagin::findOrFail($id);
+            } elseif ($type === 'women') {
+                $article = Women::findOrFail($id);
+            } elseif ($type === 'migration') {
+                $article = MigrationCom::findOrFail($id);
             }
             $messages = $article->messages->toArray();
 
@@ -63,7 +80,11 @@ class MessageController extends Controller
             }
             
             return response()->json($messages);
+
         } catch (Exception $ec) {
+            if ($ec instanceof ModelNotFoundException) {
+                return response()->json('No record was found', 500);
+            }
             return response()->json($ec,500);
         }
     }
@@ -74,6 +95,12 @@ class MessageController extends Controller
             $article = Protests::findOrFail($articleid);
         } elseif ($articleType === 'activities') {
             $article = Activity::findOrFail($articleid);
+        } elseif ($articleType === 'campagins') {
+            $article = Campagin::findOrFail($articleid);
+        } elseif ($articleType === 'women') {
+            $article = Women::findOrFail($articleid);
+        } elseif ($articleType === 'migration') {
+            $article = MigrationCom::findOrFail($articleid);
         }
         
         $message = $article->messages()->findOrFail($msgId);

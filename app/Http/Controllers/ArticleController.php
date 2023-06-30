@@ -4,15 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Models\Activity;
 use App\Models\Article;
+use App\Models\Campagin;
+use App\Models\MigrationCom;
 use App\Models\Protests;
 use App\Models\User;
+use App\Models\Women;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 
 use function PHPSTORM_META\map;
 
@@ -34,6 +35,12 @@ class ArticleController extends Controller
                 $article = new Activity;
             } elseif ($type === 'articles') {
                 $article = new Article;
+            } elseif ($type === 'campagins') {
+                $article = new Campagin;
+            } elseif ($type === 'women') {
+                $article  = new Women;
+            } elseif ($type === 'migration') {
+                $article = new MigrationCom;
             }
 
             $user_id = Auth::id();
@@ -41,7 +48,7 @@ class ArticleController extends Controller
             $article->title = $request->input('title');
             $article->date = $request->input('date');
             $article->bodyText = $request->input('content');
-            if($type !== 'articles') {
+            if($type !== 'articles' && $type !== 'campagins' && $type !== 'women' && $type  !== 'migration') {
                 $article->total_msg = 6;
             }
             $article->total_view = 12;
@@ -81,9 +88,6 @@ class ArticleController extends Controller
             if ($type === 'protest') {
 
                 $protests = Protests::withCount('messages')->with('user')->get()->toArray();
-                Log::info('protests', [
-                    $protests
-                ]);
                 foreach ($protests as &$protest) {
                     $protest['created_at'] = Carbon::parse($protest['created_at'])->format('d M Y');
                 }
@@ -109,6 +113,30 @@ class ArticleController extends Controller
                 }
                 return response()->json($articles);
 
+            } else if ($type === 'campagins') {
+                $articles = Campagin::withCount('messages')->with('user')->get()->toArray();
+
+                foreach ($articles as &$article) {
+                    $article['created_at'] = Carbon::parse($article['created_at'])->format('d M Y');
+                }
+
+                return response()->json($articles);
+            } else if ($type === 'women') {
+                $articles = Women::withCount('messages')->with('user')->get()->toArray();
+
+                foreach ($articles as &$article) {
+                    $article['created_at'] = Carbon::parse($article['created_at'])->format('d M Y');
+                }
+
+                return response()->json($articles);
+            } else if ($type === 'migration') {
+                $articles = MigrationCom::withCount('messages')->with('user')->get()->toArray();
+
+                foreach ($articles as &$article) {
+                    $article['created_at'] = Carbon::parse($article['created_at'])->format('d M Y');
+                }
+
+                return response()->json($articles);
             }
 
         } catch (Exception $ex) {
@@ -134,6 +162,12 @@ class ArticleController extends Controller
 
                 $article = Article::with('user')->find($id);
 
+            } elseif ($type === 'campagins') {
+                $article = Campagin::with('user')->find($id);
+            }  elseif ($type === 'women') {
+                $article = Women::with('user')->find($id);
+            } elseif ($type === 'migration') {
+                $article = MigrationCom::with('user')->find($id);
             }
 
 
@@ -166,13 +200,7 @@ class ArticleController extends Controller
             if($bodyText) {
                 $article->bodyText = $bodyText;
             }
-            
-            if($type !== 'articles') {
-                $article->total_msg = 4;
-            }
 
-
-            $article->total_view = 23;
 
             if($request->hasFile('coverImg')) {
 
@@ -218,10 +246,33 @@ class ArticleController extends Controller
                 $lastProtest = Activity::latest()->first();
 
             } elseif ($type === 'articles') {
+
                 $article = Article::findOrFail($id);
                 $article->messages()->delete();
                 $article->delete();
                 $lastProtest = Article::latest()->first();
+
+            } elseif ($type === 'campagins') {
+
+                $article = Campagin::findOrFail($id);
+                $article->messages()->delete();
+                $article->delete();
+                $lastProtest = Campagin::latest()->first();
+
+            } elseif ($type === 'Women') {
+
+                $article = Women::findOrFail($id);
+                $article->messages()->delete();
+                $article->delete();
+                $lastProtest = Women::latest()->first();
+
+            } elseif ($type === 'migration') {
+
+                $article = MigrationCom::findOrFail($id);
+                $article->messages()->delete();
+                $article->delete();
+                $lastProtest = MigrationCom::latest()->first();
+
             }
 
 
@@ -263,11 +314,29 @@ class ArticleController extends Controller
 
         }
         if ($type === 'protest') {
+
             $article = Protests::findOrFail($id);
+
         } elseif ($type === 'activities') {
+
             $article = Activity::findOrFail($id);
+
         } elseif ($type === 'articles') {
+
             $article = Article::findOrFail($id);
+
+        } elseif ($type === 'campagins') {
+
+            $article = Campagin::findOrFail($id);
+
+        } elseif ($type === 'women') {
+
+            $article = Women::findOrFail($id);
+
+        } elseif ($type === 'migration') {
+
+            $article = MigrationCom::findOrFail($id);
+
         }
 
         $article->increment('total_view');
@@ -308,6 +377,7 @@ class ArticleController extends Controller
         $folderPath = public_path('images/' . $type . '/' . $protestId . '/' . 'thumbnails/');
 
         if(!File::exists($folderPath)) {
+
             File::makeDirectory($folderPath, 0777, true, true);
         }
 
@@ -327,6 +397,12 @@ class ArticleController extends Controller
             $lastInsertId = Activity::max('id');
         } elseif ($type === 'articles') {
             $lastInsertId = Article::max('id');
+        } elseif ($type === 'campagins') {
+            $lastInsertId = Campagin::max('id');
+        } elseif ($type === 'women') {
+            $lastInsertId = Women::max('id');
+        } elseif ($type === 'migration') {
+            $lastInsertId = MigrationCom::max('id');
         }
 
         $nextId = ($lastInsertId !== null) ? ($lastInsertId + 1) : 1;
