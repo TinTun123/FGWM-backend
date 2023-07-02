@@ -11,15 +11,18 @@ use App\Models\User;
 use App\Models\Women;
 use Carbon\Carbon;
 use Exception;
+use FFMpeg\Format\Video\X264;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\File;
-
-use function PHPSTORM_META\map;
+use Illuminate\Support\Facades\Log;
+use ProtoneMedia\LaravelFFMpeg\Support\FFMpeg;
+use Symfony\Component\Process\Exception\ProcessFailedException;
+use Symfony\Component\Process\Process;
 
 class ArticleController extends Controller
 {
-    //
+    
     public function create(Request $request) {
 
         try {
@@ -33,14 +36,23 @@ class ArticleController extends Controller
             } elseif ($type === 'activities') {
 
                 $article = new Activity;
+
             } elseif ($type === 'articles') {
+
                 $article = new Article;
+
             } elseif ($type === 'campagins') {
+
                 $article = new Campagin;
+
             } elseif ($type === 'women') {
+
                 $article  = new Women;
+
             } elseif ($type === 'migration') {
+
                 $article = new MigrationCom;
+
             }
 
             $user_id = Auth::id();
@@ -259,7 +271,7 @@ class ArticleController extends Controller
                 $article->delete();
                 $lastProtest = Campagin::latest()->first();
 
-            } elseif ($type === 'Women') {
+            } elseif ($type === 'women') {
 
                 $article = Women::findOrFail($id);
                 $article->messages()->delete();
@@ -278,6 +290,7 @@ class ArticleController extends Controller
 
 
             $folderPath = public_path('images/' . $type . '/' . $id);
+
             if(File::exists($folderPath)) {
                 File::deleteDirectory($folderPath);
             }
@@ -287,7 +300,7 @@ class ArticleController extends Controller
             ]);
         } catch (Exception $exc) {
             return response()->json([
-                'error' => 'Delete operation failed',
+                $exc,
                 500
             ]);
         }
@@ -347,7 +360,13 @@ class ArticleController extends Controller
     }
 
     private function storeImage($image, $protetId, $type) {
+
+
+        $imageExtension = ['jpg', 'jpeg', 'png', 'gif'];
+        $videoExtension = ['mp4', 'mov', 'avi', 'wmv', 'flv'];
+
         $filename = uniqid() . '.' . $image->getClientOriginalExtension();
+        $fileextension = strtolower($image->getClientOriginalExtension());
         $folderPath = 'images/' . $type . '/' . $protetId;
 
         if(is_dir($folderPath)) {
@@ -362,16 +381,77 @@ class ArticleController extends Controller
 
             }
         }
+        
 
         if(!File::exists(public_path($folderPath))) {
+
             File::makeDirectory(public_path($folderPath), 0777, true, true);
+
         }
 
-        $image->move(public_path($folderPath), $filename);
+
+        if(in_array($fileextension, $imageExtension) || in_array($fileextension, $videoExtension)) {
+            // it is image fo something
+            $image->move(public_path($folderPath), $filename);
+
+        } elseif (in_array($fileextension, $videoExtension)) {
+            //it is video do something
+            // if($this->compressVideo($image, public_path($folderPath . '/' . $filename))) {
+            //     Log::info('everythings ok');
+            // }
+        }
+
+
+
+        // 
         $publicURL = asset($folderPath . '/' . $filename);
         return $publicURL;
 
     }
+
+    // private function compressVideo($videoPath, $outputPath) {
+
+    //     // $commad = '/usr/bin/ffmpeg' -i ' . $videoPath . ' -vcodec libx264 -crf 28 ' . $outputPath;
+    //     $commad = '/usr/bin/ffmpeg';        
+    //     $process = new Process([
+    //         $commad,
+    //         '-i',
+    //         $videoPath,
+    //         '-r',
+    //         '20',
+    //         '-c:v',
+    //         'libx264',
+    //         '-b:v',
+    //         '600k',
+    //         '-b:a',
+    //         '44100',
+    //         '-ac',
+    //         '2',
+    //         '-ar',
+    //         '22050',
+    //         '-tune',
+    //         'fastdecode',
+    //         $outputPath
+    //     ]);
+
+    //     try {
+    //         $process->run(function ($type, $buffer) {
+    //             Log::info($buffer);
+    //         });
+
+    //         if($process->isSuccessful()) {
+    //             $output = $process->getOutput();
+    //             Log::info('command output' . $output);
+    //             return true;
+    //         } else {
+    //             Log::info('shit went down');
+    //             return false;
+    //         }
+    //     } catch (ProcessFailedException $exce) {
+    //         Log::info($exce);
+    //         return false;
+    //     }
+    // }
 
     private function storeThumbnails($images, $protestId, $type) {
         $folderPath = public_path('images/' . $type . '/' . $protestId . '/' . 'thumbnails/');

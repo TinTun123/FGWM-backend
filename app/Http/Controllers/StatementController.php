@@ -16,13 +16,19 @@ class StatementController extends Controller
         try {
 
             $date = $request->input('date');
+            $isjoint = $request->input('isjoint');
             $imageFile = $request->file('image');
+            
             $id = $this->generateNewId();
             $statement = new Statement();
             $statement->date = $date;
             $statement->id = $id;
             $statement->img_url = $this->storeStateImages($imageFile, $id);
             
+            if ($isjoint === 'true') {
+                $statement->isjoint = true;
+            }
+
             $statement->save();
             return response()->json([$statement]);
             
@@ -52,7 +58,12 @@ class StatementController extends Controller
 
     public function getStatement(Request $request, $page = 4) {
         
-        $statements = Statement::paginate($page);
+        $statements = Statement::where('isjoint', false)->paginate($page);
+        return response()->json($statements);
+    }
+
+    public function getJointStatement(Request $request, $page = 4) {
+        $statements = Statement::where('isjoint', true)->paginate($page);
         return response()->json($statements);
     }
 

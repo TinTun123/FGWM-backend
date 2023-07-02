@@ -32,6 +32,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
 Route::post('login', [AuthController::class, 'login']);
 Route::get('statement/{page?}', [StatementController::class, 'getStatement']);
+Route::get('statementJoint/{page?}', [StatementController::class, 'getJointStatement']);
 Route::get('protest/{type}', [ArticleController::class, 'showProtest']);
 Route::get('protest/{type}/{id}', [ArticleController::class, 'showThumbnails']);
 Route::post('message/{type}/{id}', [MessageController::class, 'saveMessage']);
