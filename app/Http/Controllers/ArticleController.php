@@ -11,14 +11,10 @@ use App\Models\User;
 use App\Models\Women;
 use Carbon\Carbon;
 use Exception;
-use FFMpeg\Format\Video\X264;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
-use ProtoneMedia\LaravelFFMpeg\Support\FFMpeg;
-use Symfony\Component\Process\Exception\ProcessFailedException;
-use Symfony\Component\Process\Process;
 
 class ArticleController extends Controller
 {
@@ -78,6 +74,12 @@ class ArticleController extends Controller
                 $this->storeThumbnails($images, $article->id, $request->input('type'));
 
             }
+
+            if ($request->hasFile('thumbnail')) {
+                
+                $this->storeImage($request->file('thumbnail'), $article->id . '/videoThumb', $request->input('type'));
+            
+            }
     
             $article->save();
 
@@ -100,9 +102,19 @@ class ArticleController extends Controller
             if ($type === 'protest') {
 
                 $protests = Protests::withCount('messages')->with('user')->get()->toArray();
-                foreach ($protests as &$protest) {
-                    $protest['created_at'] = Carbon::parse($protest['created_at'])->format('d M Y');
-                }
+                if ($protests) {
+                    foreach ($protests as &$protest) {
+
+                        $protest['created_at'] = Carbon::parse($protest['created_at'])->format('d M Y');
+                        $temp = $this->isVideo($type, $protest['id'], basename($protest['imgURL']));
+                        $protest['isVideo'] = $temp[1];
+                        $protest['isProtrait'] = $temp[0];
+                        $protest['thumbnail'] = $temp[2];
+        
+                    }
+                }    
+
+                    
                 
                 return response()->json($protests);
 
@@ -110,53 +122,128 @@ class ArticleController extends Controller
 
                 $activities = Activity::withCount('messages')->with('user')->get()->toArray();
                 
-                foreach ($activities as &$activity) {
-                    $activity['created_at'] = Carbon::parse($activity['created_at'])->format('d M Y');
+                if($activities) {
+                    foreach ($activities as &$activity) {
+                        $activity['created_at'] = Carbon::parse($activity['created_at'])->format('d M Y');
+                        $temp = $this->isVideo($type, $activity['id'], basename($activity['imgURL']));
+                        $activity['isVideo'] = $temp[1];
+                        $activity['isProtrait'] = $temp[0];
+                        $activity['thumbnail'] = $temp[2];
+                    }
                 }
+
 
                 return response()->json($activities);
 
             } else if ($type === 'articles') {
 
                 $articles = Article::withCount('messages')->with('user')->get()->toArray();
-
-                foreach ($articles as &$article) {
-                    $article['created_at'] = Carbon::parse($article['created_at'])->format('d M Y');
+                if($articles) {
+                    foreach ($articles as &$article) {
+                        $article['created_at'] = Carbon::parse($article['created_at'])->format('d M Y');
+    
+                        $temp = $this->isVideo($type, $article['id'], basename($article['imgURL']));
+                        $article['isVideo'] = $temp[1];
+                        $article['isProtrait'] = $temp[0];
+                        $article['thumbnail'] = $temp[2];
+                    }
                 }
+
                 return response()->json($articles);
 
             } else if ($type === 'campagins') {
                 $articles = Campagin::withCount('messages')->with('user')->get()->toArray();
 
-                foreach ($articles as &$article) {
-                    $article['created_at'] = Carbon::parse($article['created_at'])->format('d M Y');
+                if($articles) {
+                    foreach ($articles as &$article) {
+                        $article['created_at'] = Carbon::parse($article['created_at'])->format('d M Y');
+                        $temp = $this->isVideo($type, $article['id'], basename($article['imgURL']));
+                        $article['isVideo'] = $temp[1];
+                        $article['isProtrait'] = $temp[0];
+                        $article['thumbnail'] = $temp[2];
+                    }
                 }
 
                 return response()->json($articles);
             } else if ($type === 'women') {
                 $articles = Women::withCount('messages')->with('user')->get()->toArray();
-
-                foreach ($articles as &$article) {
-                    $article['created_at'] = Carbon::parse($article['created_at'])->format('d M Y');
+                if($articles) {
+                    foreach ($articles as &$article) {
+                        $article['created_at'] = Carbon::parse($article['created_at'])->format('d M Y');
+                        $temp = $this->isVideo($type, $article['id'], basename($article['imgURL']));
+                        $article['isVideo'] = $temp[1];
+                        $article['isProtrait'] = $temp[0];
+                        $article['thumbnail'] = $temp[2];
+                    }
                 }
+
 
                 return response()->json($articles);
             } else if ($type === 'migration') {
                 $articles = MigrationCom::withCount('messages')->with('user')->get()->toArray();
 
-                foreach ($articles as &$article) {
-                    $article['created_at'] = Carbon::parse($article['created_at'])->format('d M Y');
+                if($articles) {
+                    foreach ($articles as &$article) {
+                        $article['created_at'] = Carbon::parse($article['created_at'])->format('d M Y');
+                        $temp = $this->isVideo($type, $article['id'], basename($article['imgURL']));
+                        $article['isVideo'] = $temp[1];
+                        $article['isProtrait'] = $temp[0];
+                        $article['thumbnail'] = $temp[2];
+                    }
                 }
-
                 return response()->json($articles);
             }
 
         } catch (Exception $ex) {
+            Log::info('error', [$ex]);
             return response()->json([
                 'error' => $ex,
                 500
             ]);
         }
+    }
+
+    private function isVideo($type, $id, $fileName) {
+        try {
+            //code...
+            $folderPath = public_path('images' . '/' . $type . '/' . $id . '/');
+
+            $mimeType = mime_content_type($folderPath . $fileName);
+            
+            if (strpos($mimeType, 'image/') === 0) {
+                // image do something
+                $imageSize = getimagesize($folderPath . $fileName);
+    
+                if ($imageSize !== false && $imageSize[0] < $imageSize[1]) {
+                    $isProtrait = true;
+                } else {
+                    $isProtrait = false;
+                }
+                $isVideo = false;
+                $thumbnail = '';
+            } elseif (strpos($mimeType, 'video/') === 0) {
+                // video do something
+                $isVideo = true;
+                $isProtrait = false;
+                $files = scandir($folderPath . 'videoThumb');
+    
+                foreach($files as $file) {
+                    if ($file !== '.' && $file !== '..') {
+                        $thumbnail = asset('images' . '/' . $type . '/' . $id . '/' . 'videoThumb' . '/' . $file);
+                    }
+                }
+                
+            }
+    
+            return [$isProtrait, $isVideo, $thumbnail];
+        } catch (Exception $exe) {
+            //throw $th;
+            Log::info('Error:'[
+                $exe
+            ]);
+        }
+
+
     }
 
     public function editProtest(Request $request, $type, $id) {
@@ -229,7 +316,20 @@ class ArticleController extends Controller
                 $this->storeThumbnails($images, $id, $request->input('type'));
             }
 
+            if ($request->hasFile('thumbnail')) {
+                
+                $this->storeImage($request->file('thumbnail'), $id . '/videoThumb', $type);
+            
+            }
+
             $article->save();
+            $temp = $this->isVideo($type, $id, basename($article->imgURL));
+            $article['isVideo'] = $temp[1];
+            $article['isProtrait'] = $temp[0];
+            $article['thumbnail'] = $temp[2];
+            Log::info('edited: ',[
+                $article
+            ]);
             return response()->json([$article]);
 
         } catch (Exception $ece) {
