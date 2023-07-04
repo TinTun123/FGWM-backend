@@ -10,6 +10,6 @@
 </head>
 <body>
     <div id="app"></div>
-    <script src="{{asset('assets/index-f00542ff.js')}}"></script>
+    <script src="{{asset('assets/index-33e36bf6.js')}}"></script>
 </body>
 </html>
