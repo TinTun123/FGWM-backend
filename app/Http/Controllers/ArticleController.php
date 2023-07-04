@@ -15,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class ArticleController extends Controller
 {
@@ -71,23 +72,38 @@ class ArticleController extends Controller
             if ($request->hasFile('images')) {
 
                 $images = $request->file('images');
-                $this->storeThumbnails($images, $article->id, $request->input('type'));
+                $storeThumbs =  $this->storeThumbnails($images, $article->id, $request->input('type'));
+
+                if(!$storeThumbs) {
+                    return response()->json(['error' => 'Saving files not success'], 500);
+                }
 
             }
 
             if ($request->hasFile('thumbnail')) {
                 
-                $this->storeImage($request->file('thumbnail'), $article->id . '/videoThumb', $request->input('type'));
-            
+                $thumbnail = $this->storeImage($request->file('thumbnail'), $article->id . '/videoThumb', $request->input('type'));
+                
+                if ($thumbnail === '') {
+                    return response()->json(['error' => 'Saving file not complete'], 500);
+                }
             }
     
             $article->save();
 
             $article->user = User::find($user_id);
-    
+
+            $temp = $this->isVideo($type, $article->id, basename($article->imgURL));
+            $article['isVideo'] = $temp[1];
+            $article['isProtrait'] = $temp[0];
+            $article['thumbnail'] = $temp[2];
+            
+
+
             return response()->json([
                 $article
             ]);
+
         } catch (\Exception $e) {
             return response()->json([
                 'error' => $e->getMessage(),
@@ -195,9 +211,8 @@ class ArticleController extends Controller
             }
 
         } catch (Exception $ex) {
-            Log::info('error', [$ex]);
             return response()->json([
-                'error' => $ex,
+                'error' => $ex->getMessage(),
                 500
             ]);
         }
@@ -274,15 +289,15 @@ class ArticleController extends Controller
             $user_id = Auth::id();
 
             if(!$article) {
-                return response()->json(['message' => 'Article not found'], 404);
+                return response()->json(['error' => 'Article not found'], 500);
             }
 
             $title = $request->input('title');
 
             if(!$title) {
                 return response()->json([
-                    'message' => 'No title found',
-                    400
+                    'error' => 'No title found',
+                    500
                 ]);
             }
 
@@ -305,6 +320,10 @@ class ArticleController extends Controller
 
                 $article->imgURL = $this->storeImage($request->file('coverImg'), $id, $type);
 
+                if($article->imgURL == '') {
+                    return response()->json(['error' => 'Saving file not complete'], 500);
+                }
+
             }
             $folderPath = public_path('images/' . $type . '/' . $id . '/' . 'thumbnails/');
             if(File::exists($folderPath)) {
@@ -313,12 +332,20 @@ class ArticleController extends Controller
 
             if ($request->hasFile('images')) {
                 $images = $request->file('images');
-                $this->storeThumbnails($images, $id, $request->input('type'));
+                $storeThumbs = $this->storeThumbnails($images, $id, $request->input('type'));
+
+                if(!$storeThumbs) {
+                    return response()->json(['error' => 'Saving files not complete'], 500);
+                }
             }
 
             if ($request->hasFile('thumbnail')) {
                 
-                $this->storeImage($request->file('thumbnail'), $id . '/videoThumb', $type);
+                $storeVideoThumb = $this->storeImage($request->file('thumbnail'), $id . '/videoThumb', $type);
+
+                if($storeVideoThumb == '') {
+                    return response()->json(['error' => 'Saving file not complete'], 500);
+                }
             
             }
 
@@ -334,7 +361,7 @@ class ArticleController extends Controller
 
         } catch (Exception $ece) {
             return response()->json([
-                'error' => $ece,
+                'error' => $ece->getMessage(),
                 500
             ]);
         }
@@ -461,52 +488,44 @@ class ArticleController extends Controller
 
     private function storeImage($image, $protetId, $type) {
 
-
-        $imageExtension = ['jpg', 'jpeg', 'png', 'gif'];
-        $videoExtension = ['mp4', 'mov', 'avi', 'wmv', 'flv'];
-
-        $filename = uniqid() . '.' . $image->getClientOriginalExtension();
-        $fileextension = strtolower($image->getClientOriginalExtension());
-        $folderPath = 'images/' . $type . '/' . $protetId;
-
-        if(is_dir($folderPath)) {
-
-            $files = scandir($folderPath);
-
-
-            foreach($files as $file) {
-                if(is_file(public_path($folderPath) . '/' . $file)) {
-                    unlink(public_path($folderPath) . '/' . $file);
-                }
-
+        try {
+            $imageExtension = ['jpg', 'jpeg', 'png', 'gif'];
+            $videoExtension = ['mp4', 'mov', 'avi', 'wmv', 'flv'];
+            $fileextension = strtolower($image->getClientOriginalExtension());
+            $folderPath = 'images/' . $type . '/' . $protetId;
+    
+            Storage::disk('public')->deleteDirectory($folderPath);
+    
+    
+    
+    
+            
+    
+            if(!File::exists(public_path($folderPath))) {
+    
+                File::makeDirectory(public_path($folderPath), 0777, true, true);
+    
             }
+    
+    
+            if(in_array($fileextension, $imageExtension) || in_array($fileextension, $videoExtension)) {
+                // it is image fo something
+                try {
+                    $path = $image->store($folderPath, 'public');
+                } catch(\Exception $e) {
+                    return response()->json(['error' => $e->getMessage()], 500);
+                }
+            }
+    
+    
+    
+            // 
+            $publicURL = asset($path);
+    
+            return $publicURL;
+        } catch (Exception $ex) {
+            return '';
         }
-        
-
-        if(!File::exists(public_path($folderPath))) {
-
-            File::makeDirectory(public_path($folderPath), 0777, true, true);
-
-        }
-
-
-        if(in_array($fileextension, $imageExtension) || in_array($fileextension, $videoExtension)) {
-            // it is image fo something
-            $image->move(public_path($folderPath), $filename);
-
-        } elseif (in_array($fileextension, $videoExtension)) {
-            //it is video do something
-            // if($this->compressVideo($image, public_path($folderPath . '/' . $filename))) {
-            //     Log::info('everythings ok');
-            // }
-        }
-
-
-
-        // 
-        $publicURL = asset($folderPath . '/' . $filename);
-        return $publicURL;
-
     }
 
     // private function compressVideo($videoPath, $outputPath) {
@@ -554,17 +573,26 @@ class ArticleController extends Controller
     // }
 
     private function storeThumbnails($images, $protestId, $type) {
-        $folderPath = public_path('images/' . $type . '/' . $protestId . '/' . 'thumbnails/');
 
-        if(!File::exists($folderPath)) {
+        try {
+            //code...
+            $folderPath = public_path('images/' . $type . '/' . $protestId . '/' . 'thumbnails/');
 
-            File::makeDirectory($folderPath, 0777, true, true);
+            if(!File::exists($folderPath)) {
+    
+                File::makeDirectory($folderPath, 0777, true, true);
+            }
+    
+            foreach ($images as $image) {
+                $filename = uniqid() . '.' . $image->getClientOriginalExtension();
+                $image->move($folderPath, $filename);
+            }
+            return true;
+        } catch (\Throwable $th) {
+            //throw $th;
+            return false;
         }
 
-        foreach ($images as $image) {
-            $filename = uniqid() . '.' . $image->getClientOriginalExtension();
-            $image->move($folderPath, $filename);
-        }
     }
  
     
