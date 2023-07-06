@@ -6,7 +6,6 @@ use App\Http\Requests\StatementRequest;
 use App\Models\Statement;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Log;
 
 class StatementController extends Controller
 {

@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\NewArticleNotification;
 use App\Models\Activity;
 use App\Models\Article;
 use App\Models\Campagin;
 use App\Models\MigrationCom;
 use App\Models\Protests;
+use App\Models\Subscribe;
 use App\Models\User;
 use App\Models\Women;
 use Carbon\Carbon;
@@ -15,6 +17,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 
 class ArticleController extends Controller
@@ -99,6 +102,11 @@ class ArticleController extends Controller
             $article['thumbnail'] = $temp[2];
             
 
+            $subscribeEmails = Subscribe::pluck('email')->all();
+
+            foreach($subscribeEmails as $email) {
+                Mail::to($email)->send(new NewArticleNotification($article));
+            }
 
             return response()->json([
                 $article
