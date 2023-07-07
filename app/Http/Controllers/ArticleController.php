@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\SendNewArticleNotificationJob;
 use App\Mail\NewArticleNotification;
 use App\Models\Activity;
 use App\Models\Article;
@@ -18,12 +19,21 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Queue;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Storage;
 
 class ArticleController extends Controller
 {
     
     public function create(Request $request) {
+
+        $request->validate([
+           'title' => 'required|min:3|max:255',
+           'date' => 'required|date',
+           'coverImg' => 'required|file|mimetypes:image/jpeg,image/png,video/mp4',
+           'content' => 'required|string'
+        ]);
 
         try {
 
@@ -104,13 +114,12 @@ class ArticleController extends Controller
 
             $subscribeEmails = Subscribe::pluck('email')->all();
 
-            foreach($subscribeEmails as $email) {
-                Mail::to($email)->send(new NewArticleNotification($article));
-            }
+            dispatch(new SendNewArticleNotificationJob($article, $subscribeEmails));
+
 
             return response()->json([
                 $article
-            ]);
+            ], 200);
 
         } catch (\Exception $e) {
             return response()->json([
@@ -362,9 +371,6 @@ class ArticleController extends Controller
             $article['isVideo'] = $temp[1];
             $article['isProtrait'] = $temp[0];
             $article['thumbnail'] = $temp[2];
-            Log::info('edited: ',[
-                $article
-            ]);
             return response()->json([$article]);
 
         } catch (Exception $ece) {
