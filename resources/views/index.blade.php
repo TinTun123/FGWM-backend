@@ -4,6 +4,7 @@
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
     <link href="{{asset('assets/index-cf0631c4.css')}}" rel="stylesheet">
     <title>FGWM.org</title>
 
