@@ -18,7 +18,8 @@ class Campagin extends Model
         'bodyText',
         'title',
         'imgURL',
-        'bodyText'
+        'bodyText',
+        'committees'
 
     ];
 

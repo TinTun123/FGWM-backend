@@ -61,6 +61,32 @@ class StatementController extends Controller
         return response()->json($statements);
     }
 
+    public function getOneStatement(Request $request, $id) {
+        $folderPath = public_path('images/statements/' . $id);
+
+        if (!File::isDirectory($folderPath)) {
+            return response()->json([
+                'error' => 'Folder not found'
+            ], 400);
+        }
+
+        $imagesPath = [];
+
+        $files = File::files($folderPath);
+
+        foreach($files as $file) {
+            $filename = $file->getFilename();
+
+            $publicPath = asset("images/statements/{$id}/{$filename}");
+
+            $imagesPath[] = $publicPath;
+        }
+
+        return response()->json([
+            'imagesPath' => $imagesPath
+        ], 200);
+    }
+
     public function getJointStatement(Request $request, $page = 4) {
         $statements = Statement::where('isjoint', true)->paginate($page);
         return response()->json($statements);

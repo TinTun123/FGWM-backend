@@ -25,18 +25,19 @@ use Illuminate\Auth\Events\Verified;
 
 Route::middleware(['auth:sanctum', ])->group(function () {
 
-    Route::post('statement', [StatementController::class, 'upload']);
+    Route::post('statements', [StatementController::class, 'upload']);
     Route::post('createArticle', [ArticleController::class, 'create']);
     Route::put('protest/{type}/{id}', [ArticleController::class, 'editProtest']);
     Route::delete('protest/{type}/{id}', [ArticleController::class, 'deleteProtest']);
     Route::delete('message/{articleType}/{articleId}/{msgId}', [MessageController::class, 'deleteMessage']);
-    Route::delete('statement/{id}', [StatementController::class, 'deleteStatement']);
+    Route::delete('statements/{id}', [StatementController::class, 'deleteStatement']);
     Route::post('admin/register', AdminAuthRegisterController::class);
 });
 
 Route::post('login', [AuthController::class, 'login']);
-Route::get('statement/{page?}', [StatementController::class, 'getStatement']);
+Route::get('statements/{page?}', [StatementController::class, 'getStatement']);
 Route::get('statementJoint/{page?}', [StatementController::class, 'getJointStatement']);
+Route::get('statement/{id}', [StatementController::class, 'getOneStatement']);
 Route::get('protest/{type}', [ArticleController::class, 'showProtest']);
 Route::get('protest/{type}/{id}', [ArticleController::class, 'showThumbnails']);
 Route::post('message/{type}/{id}', [MessageController::class, 'saveMessage']);

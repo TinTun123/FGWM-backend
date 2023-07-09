@@ -17,8 +17,8 @@ class Protests extends Model
         'bodyText',
         'title',
         'imgURL',
-        'bodyText'
-
+        'bodyText',
+        'committees'
     ];
 
     protected $guarded = [];

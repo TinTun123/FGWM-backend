@@ -18,7 +18,8 @@ class Article extends Model
         'bodyText',
         'title',
         'imgURL',
-        'bodyText'
+        'bodyText',
+        'committees'
 
     ];
 

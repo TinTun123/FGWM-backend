@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Jobs\SendNewArticleNotificationJob;
-use App\Mail\NewArticleNotification;
+// use App\Jobs\SendNewArticleNotificationJob;
+// use App\Mail\NewArticleNotification;
 use App\Models\Activity;
 use App\Models\Article;
 use App\Models\Campagin;
@@ -18,9 +18,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Support\Facades\Queue;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\Storage;
 
 class ArticleController extends Controller
@@ -32,7 +29,7 @@ class ArticleController extends Controller
            'title' => 'required|min:3|max:255',
            'date' => 'required|date',
            'coverImg' => 'required|file|mimetypes:image/jpeg,image/png,video/mp4',
-           'content' => 'required|string'
+           'committees' => 'required|array|in:fgwm,women,migration'
         ]);
 
         try {
@@ -64,15 +61,21 @@ class ArticleController extends Controller
                 $article = new MigrationCom;
 
             }
+            Log::info('committees', [
+                $request->input('committees')
+            ]);
 
             $user_id = Auth::id();
             $article->id = $this->generateNewId($type);
             $article->title = $request->input('title');
             $article->date = $request->input('date');
+            $article->committees = implode(',', $request->input('committees'));
             $article->bodyText = $request->input('content');
             if($type !== 'articles' && $type !== 'campagins' && $type !== 'women' && $type  !== 'migration') {
                 $article->total_msg = 6;
             }
+
+            
             $article->total_view = 12;
             $article->user_id = $user_id;
 
@@ -114,7 +117,7 @@ class ArticleController extends Controller
 
             $subscribeEmails = Subscribe::pluck('email')->all();
 
-            dispatch(new SendNewArticleNotificationJob($article, $subscribeEmails));
+            // dispatch(new SendNewArticleNotificationJob($article, $subscribeEmails));
 
 
             return response()->json([
@@ -331,7 +334,11 @@ class ArticleController extends Controller
             if($bodyText) {
                 $article->bodyText = $bodyText;
             }
-
+            
+            $committees = implode(',', $request->input('committees'));
+            if ($committees) {
+                $article->committees = $committees;
+            }
 
             if($request->hasFile('coverImg')) {
 
