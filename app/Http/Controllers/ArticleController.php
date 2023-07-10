@@ -479,9 +479,7 @@ class ArticleController extends Controller
         if(!file_exists(public_path($folderPath)) || !is_dir(public_path($folderPath))) {
             return response()->json([]);
         }
-        Log::info('committees', [
-            $committees
-        ]);
+
         if ($type === 'protest') {
 
             $article = Protests::findOrFail($id);
@@ -668,6 +666,8 @@ class ArticleController extends Controller
             $lastInsertId = Women::max('id');
         } elseif ($type === 'migration') {
             $lastInsertId = MigrationCom::max('id');
+        } elseif ($type === 'news') {
+            $lastInsertId = News::max('id');
         }
 
         $nextId = ($lastInsertId !== null) ? ($lastInsertId + 1) : 1;
