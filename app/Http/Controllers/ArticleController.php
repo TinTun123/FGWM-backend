@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class ArticleController extends Controller
 {
@@ -455,12 +456,55 @@ class ArticleController extends Controller
     }
 
 
-    public function showThumbnails(Request $request, $type, $id) {
+    public function showThumbnails(Request $request, $type, $committees, $id) {
 
         $folderPath = 'images/' . $type . '/' . $id . '/thumbnails';
         
         if(!file_exists(public_path($folderPath)) || !is_dir(public_path($folderPath))) {
             return response()->json([]);
+        }
+        Log::info('committees', [
+            $committees
+        ]);
+        if ($type === 'protest') {
+
+            $article = Protests::findOrFail($id);
+            Log::info('is_contain', [
+                Str::contains($article->committees, $committees)
+            ]);
+            if(!Str::contains($article->committees, $committees)) {
+                return response()->json([]);
+            }
+
+        } elseif ($type === 'activities') {
+
+            $article = Activity::findOrFail($id);
+            if(!Str::contains($article->committees, $committees)) {
+                return response()->json([]);
+            }
+
+        } elseif ($type === 'articles') {
+
+            $article = Article::findOrFail($id);
+            if(!Str::contains($article->committees, $committees)) {
+                return response()->json([]);
+            }
+
+        } elseif ($type === 'campagins') {
+
+            $article = Campagin::findOrFail($id);
+            if(!Str::contains($article->committees, $committees)) {
+                return response()->json([]);
+            }
+
+        } elseif ($type === 'women') {
+
+            $article = Women::findOrFail($id);
+
+        } elseif ($type === 'migration') {
+
+            $article = MigrationCom::findOrFail($id);
+
         }
 
         $files = scandir(public_path($folderPath));
@@ -474,31 +518,7 @@ class ArticleController extends Controller
             }
 
         }
-        if ($type === 'protest') {
 
-            $article = Protests::findOrFail($id);
-
-        } elseif ($type === 'activities') {
-
-            $article = Activity::findOrFail($id);
-
-        } elseif ($type === 'articles') {
-
-            $article = Article::findOrFail($id);
-
-        } elseif ($type === 'campagins') {
-
-            $article = Campagin::findOrFail($id);
-
-        } elseif ($type === 'women') {
-
-            $article = Women::findOrFail($id);
-
-        } elseif ($type === 'migration') {
-
-            $article = MigrationCom::findOrFail($id);
-
-        }
 
         $article->increment('total_view');
 

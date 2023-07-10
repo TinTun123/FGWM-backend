@@ -39,7 +39,7 @@ Route::get('statements/{page?}', [StatementController::class, 'getStatement']);
 Route::get('statementJoint/{page?}', [StatementController::class, 'getJointStatement']);
 Route::get('statement/{id}', [StatementController::class, 'getOneStatement']);
 Route::get('protest/{type}', [ArticleController::class, 'showProtest']);
-Route::get('protest/{type}/{id}', [ArticleController::class, 'showThumbnails']);
+Route::get('protest/{type}/{committees}/{id}', [ArticleController::class, 'showThumbnails']);
 Route::post('message/{type}/{id}', [MessageController::class, 'saveMessage']);
 Route::get('message/{type}/{id}', [MessageController::class, 'getMessage']);
 Route::get('email/verify/{id}', [VerificationController::class, 'verify'])->name('verification.verify');
