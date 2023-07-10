@@ -26,9 +26,7 @@ class ArticleController extends Controller
 {
     
     public function create(Request $request) {
-        Log::info('$request->committes', [
-            $request->input('committees')
-        ]);
+
         $request->validate([
            'title' => 'required|min:3|max:255',
            'date' => 'required|date',
@@ -161,9 +159,7 @@ class ArticleController extends Controller
             } else if ($type === 'activities') {
 
                 $activities = Activity::withCount('messages')->with('user')->orderByDesc('date')->get()->toArray();
-                Log::info('activities', [
-                    $activities
-                ]);
+
                 if($activities) {
                     foreach ($activities as &$activity) {
                         $activity['created_at'] = Carbon::parse($activity['created_at'])->format('d M Y');
@@ -493,9 +489,7 @@ class ArticleController extends Controller
         if ($type === 'protest') {
 
             $article = Protests::findOrFail($id);
-            Log::info('is_contain', [
-                Str::contains($article->committees, $committees)
-            ]);
+
             if(!Str::contains($article->committees, $committees)) {
                 return response()->json([]);
             }
