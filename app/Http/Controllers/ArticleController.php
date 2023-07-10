@@ -26,7 +26,9 @@ class ArticleController extends Controller
 {
     
     public function create(Request $request) {
-
+        Log::info('$request->committes', [
+            $request->input('committees')
+        ]);
         $request->validate([
            'title' => 'required|min:3|max:255',
            'date' => 'required|date',
@@ -62,10 +64,9 @@ class ArticleController extends Controller
 
                 $article = new MigrationCom;
 
+            } elseif ($type === 'news') {
+                $article = new News;
             }
-            Log::info('committees', [
-                $request->input('committees')
-            ]);
 
             $user_id = Auth::id();
             $article->id = $this->generateNewId($type);
@@ -139,8 +140,9 @@ class ArticleController extends Controller
 
             if ($type === 'protest') {
 
-                $protests = Protests::withCount('messages')->with('user')->get()->toArray();
+                $protests = Protests::withCount('messages')->with('user')->orderByDesc('date')->get()->toArray();
                 if ($protests) {
+
                     foreach ($protests as &$protest) {
 
                         $protest['created_at'] = Carbon::parse($protest['created_at'])->format('d M Y');
@@ -158,7 +160,7 @@ class ArticleController extends Controller
 
             } else if ($type === 'activities') {
 
-                $activities = Activity::withCount('messages')->with('user')->get()->toArray();
+                $activities = Activity::withCount('messages')->with('user')->orderByDesc('date')->get()->toArray();
                 Log::info('activities', [
                     $activities
                 ]);
@@ -177,7 +179,7 @@ class ArticleController extends Controller
 
             } else if ($type === 'articles') {
 
-                $articles = Article::withCount('messages')->with('user')->get()->toArray();
+                $articles = Article::withCount('messages')->with('user')->orderByDesc('date')->get()->toArray();
                 if($articles) {
                     foreach ($articles as &$article) {
                         $article['created_at'] = Carbon::parse($article['created_at'])->format('d M Y');
@@ -192,7 +194,7 @@ class ArticleController extends Controller
                 return response()->json($articles);
 
             } else if ($type === 'campagins') {
-                $articles = Campagin::withCount('messages')->with('user')->get()->toArray();
+                $articles = Campagin::withCount('messages')->with('user')->orderByDesc('date')->get()->toArray();
 
                 if($articles) {
                     foreach ($articles as &$article) {
@@ -206,7 +208,7 @@ class ArticleController extends Controller
 
                 return response()->json($articles);
             } else if ($type === 'women') {
-                $articles = Women::withCount('messages')->with('user')->get()->toArray();
+                $articles = Women::withCount('messages')->with('user')->orderByDesc('date')->get()->toArray();
                 if($articles) {
                     foreach ($articles as &$article) {
                         $article['created_at'] = Carbon::parse($article['created_at'])->format('d M Y');
@@ -220,7 +222,7 @@ class ArticleController extends Controller
 
                 return response()->json($articles);
             } else if ($type === 'migration') {
-                $articles = MigrationCom::withCount('messages')->with('user')->get()->toArray();
+                $articles = MigrationCom::withCount('messages')->with('user')->orderByDesc('date')->get()->toArray();
 
                 if($articles) {
                     foreach ($articles as &$article) {
@@ -233,7 +235,7 @@ class ArticleController extends Controller
                 }
                 return response()->json($articles);
             } else if ($type === 'news') {
-                $articles = News::withCount('messages')->with('user')->get()->toArray();
+                $articles = News::withCount('messages')->with('user')->orderByDesc('date')->get()->toArray();
 
                 if($articles) {
                     foreach($articles as &$article) {
@@ -319,6 +321,8 @@ class ArticleController extends Controller
                 $article = Women::with('user')->find($id);
             } elseif ($type === 'migration') {
                 $article = MigrationCom::with('user')->find($id);
+            } elseif ($type === 'news') {
+                $article = News::with('user')->find($id);
             }
 
 
@@ -450,7 +454,13 @@ class ArticleController extends Controller
                 $article->delete();
                 $lastProtest = MigrationCom::latest()->first();
 
+            } elseif ($type === 'news') {
+                $article = News::findOrFail($id);
+                $article->messages()->delete();
+                $article->delete();
+                $lastProtest = News::latest()->first();
             }
+
 
 
 
@@ -519,6 +529,11 @@ class ArticleController extends Controller
 
             $article = MigrationCom::findOrFail($id);
 
+        } elseif ($type === 'news') {
+            $article = News::findOrFail($id);
+            if(!Str::contains($article->committees, $committees)) {
+                return response()->json([]);
+            }
         }
 
         $files = scandir(public_path($folderPath));
