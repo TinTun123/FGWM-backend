@@ -8,6 +8,7 @@ use App\Models\Activity;
 use App\Models\Article;
 use App\Models\Campagin;
 use App\Models\MigrationCom;
+use App\Models\News;
 use App\Models\Protests;
 use App\Models\Subscribe;
 use App\Models\User;
@@ -158,7 +159,9 @@ class ArticleController extends Controller
             } else if ($type === 'activities') {
 
                 $activities = Activity::withCount('messages')->with('user')->get()->toArray();
-                
+                Log::info('activities', [
+                    $activities
+                ]);
                 if($activities) {
                     foreach ($activities as &$activity) {
                         $activity['created_at'] = Carbon::parse($activity['created_at'])->format('d M Y');
@@ -221,6 +224,19 @@ class ArticleController extends Controller
 
                 if($articles) {
                     foreach ($articles as &$article) {
+                        $article['created_at'] = Carbon::parse($article['created_at'])->format('d M Y');
+                        $temp = $this->isVideo($type, $article['id'], basename($article['imgURL']));
+                        $article['isVideo'] = $temp[1];
+                        $article['isProtrait'] = $temp[0];
+                        $article['thumbnail'] = $temp[2];
+                    }
+                }
+                return response()->json($articles);
+            } else if ($type === 'news') {
+                $articles = News::withCount('messages')->with('user')->get()->toArray();
+
+                if($articles) {
+                    foreach($articles as &$article) {
                         $article['created_at'] = Carbon::parse($article['created_at'])->format('d M Y');
                         $temp = $this->isVideo($type, $article['id'], basename($article['imgURL']));
                         $article['isVideo'] = $temp[1];

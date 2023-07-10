@@ -7,6 +7,7 @@ use App\Models\Article;
 use App\Models\Campagin;
 use App\Models\Message;
 use App\Models\MigrationCom;
+use App\Models\News;
 use App\Models\Protests;
 use App\Models\Women;
 use Carbon\Carbon;
@@ -32,6 +33,8 @@ class MessageController extends Controller
                 $article = MigrationCom::findOrFail($id);
             } elseif ($type === 'women') {
                 $article = Women::findOrFail($id);
+            } elseif ($type === 'news') {
+                $article =News::findOrFail($id);
             }
 
 
@@ -58,31 +61,39 @@ class MessageController extends Controller
     public function getMessage(Request $request, $type, $id) {
         try {
             if($type === 'protest') {
-                $article = Protests::findOrFail($id);
+                $article = Protests::find($id);
             } elseif ($type === 'activities') {
-                $article = Activity::findOrFail($id);
+                $article = Activity::find($id);
             } elseif ($type === 'articles') {
-                $article = Article::findOrFail($id);
+                $article = Article::find($id);
             } elseif ($type === 'campagins') {
-                $article = Campagin::findOrFail($id);
+                $article = Campagin::find($id);
             } elseif ($type === 'women') {
-                $article = Women::findOrFail($id);
+                $article = Women::find($id);
             } elseif ($type === 'migration') {
-                $article = MigrationCom::findOrFail($id);
+                $article = MigrationCom::find($id);
+            } elseif($type === 'news') {
+                $article = News::find($id);
             }
-            $messages = $article->messages->toArray();
 
-            foreach ($messages as &$message) {
+            if ($article) {
+                $messages = $article->messages->toArray();
 
-                $message['created_at'] = Carbon::parse($message['created_at'])->diffForHumans();
-
+                foreach ($messages as &$message) {
+    
+                    $message['created_at'] = Carbon::parse($message['created_at'])->diffForHumans();
+    
+                }
+                return response()->json($messages);
+            } else {
+                return response()->json([]);
             }
+
             
-            return response()->json($messages);
 
         } catch (Exception $ec) {
             if ($ec instanceof ModelNotFoundException) {
-                return response()->json('No record was found', 500);
+                return response()->json([], 500);
             }
             return response()->json($ec,500);
         }
@@ -100,6 +111,8 @@ class MessageController extends Controller
             $article = Women::findOrFail($articleid);
         } elseif ($articleType === 'migration') {
             $article = MigrationCom::findOrFail($articleid);
+        } elseif ($articleType === 'news') {
+            $article = News::findOrFail($articleid);
         }
         
         $message = $article->messages()->findOrFail($msgId);
