@@ -31,16 +31,24 @@ class ArticleController extends Controller
            'title' => 'required|min:3|max:255',
            'date' => 'required|date',
            'coverImg' => 'required|file|mimetypes:image/jpeg,image/png,video/mp4',
-           'committees' => 'required|array|in:fgwm,women,migration'
+           'committees' => 'required|array|in:fgwm,women,migration',
         ]);
+        
 
         try {
 
             $type = $request->input('type');
             
             if($type === 'protest') {
+                $request->validate([
+                    'category' => 'required|string|in:0,1'
+                ]);
 
                 $article = new Protests;
+
+                $article->category = (int) $request->input('category');
+
+
 
             } elseif ($type === 'activities') {
 
@@ -51,8 +59,13 @@ class ArticleController extends Controller
                 $article = new Article;
 
             } elseif ($type === 'campagins') {
-
+                $request->validate([
+                    'category' => 'required|string|in:0,1'
+                ]);
+                
                 $article = new Campagin;
+                $article->category =(int) $request->input('category');
+                
 
             } elseif ($type === 'women') {
 
