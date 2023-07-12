@@ -19,8 +19,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
+use Intervention\Image\Facades\Image;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+
 
 class ArticleController extends Controller
 {
@@ -571,6 +573,7 @@ class ArticleController extends Controller
         try {
             $imageExtension = ['jpg', 'jpeg', 'png', 'gif'];
             $videoExtension = ['mp4', 'mov', 'avi', 'wmv', 'flv'];
+
             $fileextension = strtolower($image->getClientOriginalExtension());
             $folderPath = 'images/' . $type . '/' . $protetId;
     
@@ -592,6 +595,16 @@ class ArticleController extends Controller
                 // it is image fo something
                 try {
                     $path = $image->store($folderPath, 'public');
+
+                    $imageResized = Image::make($path);
+
+
+                    $imageResized->resize(720, null, function ($constrain) {
+                        $constrain->aspectRatio();
+                    });
+
+                    $imageResized->save($path);
+
                 } catch(\Exception $e) {
                     return response()->json(['error' => $e->getMessage()], 500);
                 }
@@ -652,6 +665,28 @@ class ArticleController extends Controller
     //     }
     // }
 
+    public function resizeImage(Request $request) {
+        $publicPath = public_path('images/campagins');
+
+
+        $files = File::allFiles($publicPath, true);
+
+        foreach($files as $file) {
+
+            if(in_array($file->getExtension(), ['jpg', 'jpeg', 'png', 'gif'])) {
+                $image = Image::make($file->getPathname());
+
+                $image->resize(720, null, function ($constrain) {
+                    $constrain->aspectRatio();
+                });
+
+                $image->save($file->getPathname());
+            }
+        }
+
+        return 'Image resize successfully';
+    }
+
     private function storeThumbnails($images, $protestId, $type) {
 
         try {
@@ -666,6 +701,12 @@ class ArticleController extends Controller
             foreach ($images as $image) {
                 $filename = uniqid() . '.' . $image->getClientOriginalExtension();
                 $image->move($folderPath, $filename);
+
+                $imageReside = Image::make($folderPath . '/' . $filename);
+                $imageReside->resize(186, null, function ($constrain) {
+                    $constrain->aspectRatio();
+                });
+                $imageReside->save($folderPath . '/' . $filename);
             }
             return true;
         } catch (\Throwable $th) {

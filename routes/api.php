@@ -38,6 +38,7 @@ Route::middleware(['auth:sanctum', ])->group(function () {
     Route::delete('medias/{id}', [MediaController::class, 'deleteMedia']);
     Route::post('admin/logout/{id}', [AuthController::class, 'logout']);
 });
+Route::get('resizeImage', [ArticleController::class, 'resizeImage']);
 Route::get('medias', [MediaController::class, 'getMedia']);
 Route::post('login', [AuthController::class, 'login']);
 Route::get('statements/', [StatementController::class, 'getStatement']);
