@@ -665,8 +665,8 @@ class ArticleController extends Controller
     //     }
     // }
 
-    public function resizeImage(Request $request) {
-        $publicPath = public_path('images/campagins');
+    public function resizeImage(Request $request, $type) {
+        $publicPath = public_path('images/' . $type);
 
 
         $files = File::allFiles($publicPath, true);
@@ -675,8 +675,12 @@ class ArticleController extends Controller
 
             if(in_array($file->getExtension(), ['jpg', 'jpeg', 'png', 'gif'])) {
                 $image = Image::make($file->getPathname());
+                
 
-                $image->resize(720, null, function ($constrain) {
+                $width = (strpos($file->getPath(), 'thumbnails')) ? 186 : 720;
+                
+
+                $image->resize($width, null, function ($constrain) {
                     $constrain->aspectRatio();
                 });
 
