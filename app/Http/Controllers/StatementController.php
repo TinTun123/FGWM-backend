@@ -55,9 +55,9 @@ class StatementController extends Controller
         ], 200);
     }
 
-    public function getStatement(Request $request, $page = 4) {
+    public function getStatement(Request $request) {
         
-        $statements = Statement::where('isjoint', false)->paginate($page);
+        $statements = Statement::where('isjoint', false)->get()->toArray();
         return response()->json($statements);
     }
 
@@ -85,11 +85,15 @@ class StatementController extends Controller
         return response()->json([
             'imagesPath' => $imagesPath
         ], 200);
+
     }
 
-    public function getJointStatement(Request $request, $page = 4) {
-        $statements = Statement::where('isjoint', true)->paginate($page);
+    public function getJointStatement(Request $request) {
+
+        $statements = Statement::where('isjoint', true)->get()->toArray();
+
         return response()->json($statements);
+    
     }
 
     private function storeStateImages($images, $stateId) {

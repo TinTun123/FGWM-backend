@@ -316,6 +316,8 @@ class ArticleController extends Controller
 
                 $article = Protests::with('user')->find($id);
 
+                $article->category = $request->input('category');
+
             } elseif ($type === 'activities') {
 
                 $article = Activity::with('user')->find($id);
@@ -326,6 +328,7 @@ class ArticleController extends Controller
 
             } elseif ($type === 'campagins') {
                 $article = Campagin::with('user')->find($id);
+                $article->category = $request->input('category');
             }  elseif ($type === 'women') {
                 $article = Women::with('user')->find($id);
             } elseif ($type === 'migration') {
@@ -419,8 +422,8 @@ class ArticleController extends Controller
     }
 
     public function deleteProtest(Request $request, $type, $id) {
-        try {
 
+        try {
             if($type === 'protest') {
 
                 $article = Protests::findOrFail($id);
