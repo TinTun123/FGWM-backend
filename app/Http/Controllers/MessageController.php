@@ -97,7 +97,7 @@ class MessageController extends Controller
             }
             return response()->json($ec,500);
         }
-    }
+    } 
 
     public function deleteMessage(Request $request, $articleType, $articleid, $msgId) {
         
@@ -107,12 +107,10 @@ class MessageController extends Controller
             $article = Activity::findOrFail($articleid);
         } elseif ($articleType === 'campagins') {
             $article = Campagin::findOrFail($articleid);
-        } elseif ($articleType === 'women') {
-            $article = Women::findOrFail($articleid);
-        } elseif ($articleType === 'migration') {
-            $article = MigrationCom::findOrFail($articleid);
         } elseif ($articleType === 'news') {
             $article = News::findOrFail($articleid);
+        } elseif ($articleType === 'articles') {
+            $article = Article::findOrFail($articleid);
         }
         
         $message = $article->messages()->findOrFail($msgId);

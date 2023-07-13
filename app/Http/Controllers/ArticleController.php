@@ -571,6 +571,7 @@ class ArticleController extends Controller
     private function storeImage($image, $protetId, $type) {
 
         try {
+
             $imageExtension = ['jpg', 'jpeg', 'png', 'gif'];
             $videoExtension = ['mp4', 'mov', 'avi', 'wmv', 'flv'];
 
@@ -591,7 +592,7 @@ class ArticleController extends Controller
             }
     
     
-            if(in_array($fileextension, $imageExtension) || in_array($fileextension, $videoExtension)) {
+            if(in_array($fileextension, $imageExtension)) {
                 // it is image fo something
                 try {
                     $path = $image->store($folderPath, 'public');
@@ -608,6 +609,8 @@ class ArticleController extends Controller
                 } catch(\Exception $e) {
                     return response()->json(['error' => $e->getMessage()], 500);
                 }
+            } elseif (in_array($fileextension, $videoExtension)) {
+                $path = $image->store($folderPath, 'public');
             }
     
     
