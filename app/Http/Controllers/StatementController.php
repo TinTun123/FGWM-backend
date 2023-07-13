@@ -57,7 +57,7 @@ class StatementController extends Controller
 
     public function getStatement(Request $request) {
         
-        $statements = Statement::where('isjoint', false)->get()->toArray();
+        $statements = Statement::where('isjoint', false)->orderByDesc('date')->get()->toArray();
         return response()->json($statements);
     }
 
@@ -90,7 +90,7 @@ class StatementController extends Controller
 
     public function getJointStatement(Request $request) {
 
-        $statements = Statement::where('isjoint', true)->get()->toArray();
+        $statements = Statement::where('isjoint', true)->orderByDesc('date')->get()->toArray();
 
         return response()->json($statements);
     

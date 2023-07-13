@@ -236,12 +236,14 @@ class ArticleController extends Controller
                 $articles = MigrationCom::withCount('messages')->with('user')->orderByDesc('date')->get()->toArray();
 
                 if($articles) {
+
                     foreach ($articles as &$article) {
                         $article['created_at'] = Carbon::parse($article['created_at'])->format('d M Y');
                         $temp = $this->isVideo($type, $article['id'], basename($article['imgURL']));
                         $article['isVideo'] = $temp[1];
                         $article['isProtrait'] = $temp[0];
                         $article['thumbnail'] = $temp[2];
+                    
                     }
                 }
                 return response()->json($articles);
@@ -249,6 +251,7 @@ class ArticleController extends Controller
                 $articles = News::withCount('messages')->with('user')->orderByDesc('date')->get()->toArray();
 
                 if($articles) {
+
                     foreach($articles as &$article) {
                         $article['created_at'] = Carbon::parse($article['created_at'])->format('d M Y');
                         $temp = $this->isVideo($type, $article['id'], basename($article['imgURL']));
@@ -256,6 +259,7 @@ class ArticleController extends Controller
                         $article['isProtrait'] = $temp[0];
                         $article['thumbnail'] = $temp[2];
                     }
+
                 }
                 return response()->json($articles);
             }
@@ -329,7 +333,9 @@ class ArticleController extends Controller
                 $article = Article::with('user')->find($id);
 
             } elseif ($type === 'campagins') {
+
                 $article = Campagin::with('user')->find($id);
+
                 $article->category = $request->input('category');
             }  elseif ($type === 'women') {
                 $article = Women::with('user')->find($id);
