@@ -154,6 +154,7 @@ class ArticleController extends Controller
             if ($type === 'protest') {
 
                 $protests = Protests::withCount('messages')->with('user')->orderByDesc('date')->get()->toArray();
+                
                 if ($protests) {
 
                     foreach ($protests as &$protest) {
@@ -248,16 +249,19 @@ class ArticleController extends Controller
                 }
                 return response()->json($articles);
             } else if ($type === 'news') {
+                
                 $articles = News::withCount('messages')->with('user')->orderByDesc('date')->get()->toArray();
 
                 if($articles) {
 
                     foreach($articles as &$article) {
+
                         $article['created_at'] = Carbon::parse($article['created_at'])->format('d M Y');
                         $temp = $this->isVideo($type, $article['id'], basename($article['imgURL']));
                         $article['isVideo'] = $temp[1];
                         $article['isProtrait'] = $temp[0];
                         $article['thumbnail'] = $temp[2];
+
                     }
 
                 }
