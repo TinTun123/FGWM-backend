@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\MediaController;
 use App\Http\Controllers\MessageController;
+use App\Http\Controllers\SearchController;
 use App\Http\Controllers\StatementController;
 use App\Http\Controllers\subscribeController;
 use App\Models\Statement;
@@ -38,6 +39,7 @@ Route::middleware(['auth:sanctum', ])->group(function () {
     Route::delete('medias/{id}', [MediaController::class, 'deleteMedia']);
     Route::post('admin/logout/{id}', [AuthController::class, 'logout']);
 });
+Route::get('search', [SearchController::class, 'search']);
 Route::get('resizeImage/{type}', [ArticleController::class, 'resizeImage']);
 Route::get('medias', [MediaController::class, 'getMedia']);
 Route::post('login', [AuthController::class, 'login']);
