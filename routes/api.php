@@ -37,7 +37,12 @@ Route::middleware(['auth:sanctum', ])->group(function () {
     Route::post('admin/register', AdminAuthRegisterController::class);
     Route::post('medias', [MediaController::class, 'create']);
     Route::delete('medias/{id}', [MediaController::class, 'deleteMedia']);
-    Route::post('admin/logout/{id}', [AuthController::class, 'logout']);
+    Route::get('users', [AuthController::class, 'getUser']);
+    Route::post('admin/logout', [AuthController::class, 'logout']);
+    Route::post('changeProfile/{id}', [AuthController::class, 'updateProfile']);
+    Route::post('changePassword/{id}', [AuthController::class, 'updatePassword']);
+    Route::post('changeEmail/{id}', [AuthController::class, 'updateEmail']);
+    
 });
 Route::get('search', [SearchController::class, 'search']);
 Route::get('resizeImage/{type}', [ArticleController::class, 'resizeImage']);

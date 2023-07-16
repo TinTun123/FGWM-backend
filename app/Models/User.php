@@ -24,6 +24,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'name',
         'email',
         'password',
+        'img_url'
     ];
 
     /**
@@ -51,15 +52,23 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     public function article() {
-        return $this->morphMany(Article::class, 'user');
+        return $this->hasMany(Article::class);
 
     }
 
     public function protests() {
-        return $this->morphMany(Protests::class, 'user');
+        return $this->hasMany(Protests::class);
     }
 
     public function activities() {
-        return $this->morphMany(Activity::class, 'user');
+        return $this->hasMany(Activity::class);
+    }
+
+    public function campagins() {
+        return $this->hasMany(Campagin::class);
+    }
+
+    public function news() {
+        return $this->hasMany(News::class);
     }
 }
